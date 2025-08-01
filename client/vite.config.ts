@@ -4,6 +4,9 @@ import path from 'path';
 import svgr from '@svgr/rollup';
 
 export default defineConfig({
+  server: {
+    allowedHosts: ['e05d92661de9d3.lhr.life'],
+  },
   plugins: [react(), svgr()],
   resolve: {
     alias: {

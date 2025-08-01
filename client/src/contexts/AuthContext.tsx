@@ -1,12 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { trpc } from '../trpc';
 import { useTelegramApp } from '../hooks/useTelegramApp';
+import { useAuthStorage, AuthData } from '../hooks/useAuthStorage';
 
 interface AuthContextType {
     isRegistered: boolean;
     isLoading: boolean;
     user: any;
     telegramUser: any;
+    authToken: string | null;
     registerUser: (userData: {
         fullName: string;
         age: number;
@@ -14,6 +16,7 @@ interface AuthContextType {
         phone: string;
         iban: string;
     }) => Promise<void>;
+    logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,29 +35,44 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const { user: telegramUser, isAvailable } = useTelegramApp();
+    const { saveAuthData, getAuthData, clearAuthData, isAuthenticated } = useAuthStorage();
     const [isRegistered, setIsRegistered] = useState(false);
     const [user, setUser] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [authToken, setAuthToken] = useState<string | null>(null);
 
     // Мутации tRPC
     const upsertUserMutation = trpc.upsertUserFromTelegram.useMutation();
     const completeRegistrationMutation = trpc.completeRegistration.useMutation();
 
-    // Запрос для проверки регистрации
+    // Проверяем сохраненную авторизацию при загрузке
+    useEffect(() => {
+        const savedAuth = getAuthData();
+        if (savedAuth) {
+            setAuthToken(savedAuth.token);
+            if (savedAuth.userData) {
+                setUser(savedAuth.userData);
+                setIsRegistered(true); // Если есть сохраненные данные, считаем пользователя зарегистрированным
+            }
+        }
+        setIsLoading(false);
+    }, []);
+
+    // Запрос для проверки регистрации (только если нет сохраненных данных)
     const { data: isUserRegistered, isLoading: isCheckingRegistration } = trpc.isUserRegistered.useQuery(
         { telegramId: telegramUser?.id || 0 },
-        { enabled: !!telegramUser?.id }
+        { enabled: !!telegramUser?.id && !user } // Проверяем только если нет сохраненных данных
     );
 
-    // Запрос для получения данных пользователя
+    // Запрос для получения данных пользователя (только если нет сохраненных данных)
     const { data: currentUser, isLoading: isLoadingUser } = trpc.getCurrentUser.useQuery(
         { telegramId: telegramUser?.id || 0 },
-        { enabled: !!telegramUser?.id }
+        { enabled: !!telegramUser?.id && !user } // Загружаем только если нет сохраненных данных
     );
 
     // Эффект для инициализации пользователя из Telegram
     useEffect(() => {
-        if (telegramUser && isAvailable) {
+        if (telegramUser && isAvailable && !user) {
             upsertUserMutation.mutate({
                 telegramId: telegramUser.id,
                 firstName: telegramUser.first_name,
@@ -65,30 +83,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 allowsWriteToPm: telegramUser.allows_write_to_pm,
             });
         }
-    }, [telegramUser, isAvailable]);
+    }, [telegramUser, isAvailable, user]);
 
     // Эффект для обновления состояния регистрации
     useEffect(() => {
-        if (isUserRegistered !== undefined) {
+        if (isUserRegistered !== undefined && !user) {
             setIsRegistered(isUserRegistered);
         }
-    }, [isUserRegistered]);
+    }, [isUserRegistered, user]);
 
     // Эффект для обновления данных пользователя
     useEffect(() => {
-        if (currentUser) {
+        if (currentUser && !user) {
             setUser(currentUser);
+            setIsRegistered(true);
+            // Сохраняем данные пользователя в localStorage
+            if (telegramUser?.id) {
+                const token = `auth_${telegramUser.id}_${Date.now()}`;
+                setAuthToken(token);
+                saveAuthData({
+                    telegramId: telegramUser.id,
+                    token,
+                    userData: currentUser,
+                });
+            }
         }
-    }, [currentUser]);
+    }, [currentUser, telegramUser?.id, user]);
 
     // Эффект для управления состоянием загрузки
     useEffect(() => {
-        if (telegramUser) {
+        if (telegramUser && !user) {
             setIsLoading(isCheckingRegistration || isLoadingUser);
         } else {
             setIsLoading(false);
         }
-    }, [telegramUser, isCheckingRegistration, isLoadingUser]);
+    }, [telegramUser, isCheckingRegistration, isLoadingUser, user]);
 
     const registerUser = async (userData: {
         fullName: string;
@@ -110,6 +139,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             if (result) {
                 setUser(result);
                 setIsRegistered(true);
+                
+                // Сохраняем авторизацию в localStorage
+                const token = `auth_${telegramUser.id}_${Date.now()}`; // Генерируем токен
+                setAuthToken(token);
+                saveAuthData({
+                    telegramId: telegramUser.id,
+                    token,
+                    userData: result,
+                });
             }
         } catch (error) {
             console.error('Registration error:', error);
@@ -117,12 +155,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
     };
 
+    const logout = () => {
+        clearAuthData();
+        setUser(null);
+        setIsRegistered(false);
+        setAuthToken(null);
+    };
+
     const value: AuthContextType = {
         isRegistered,
         isLoading,
         user,
         telegramUser,
+        authToken,
         registerUser,
+        logout,
     };
 
     return (

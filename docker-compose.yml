@@ -45,7 +45,7 @@ services:
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/tgcoinbackend
       PORT: 3000
-      TELEGRAM_WEB_APP_URL: https://your-web-app-url.com
+      TELEGRAM_WEB_APP_URL: https://1a118f07136862.lhr.life
     networks:
       - app-network
     depends_on:

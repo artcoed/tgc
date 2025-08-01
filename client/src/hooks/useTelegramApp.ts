@@ -56,6 +56,17 @@ declare global {
                     showProgress(leaveActive?: boolean): void;
                     hideProgress(): void;
                 };
+                BackButton: {
+                    isVisible: boolean;
+                    onClick(fn: () => void): void;
+                    show(): void;
+                    hide(): void;
+                };
+                HapticFeedback: {
+                    impactOccurred(style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft'): void;
+                    notificationOccurred(type: 'error' | 'success' | 'warning'): void;
+                    selectionChanged(): void;
+                };
                 themeParams: {
                     bg_color?: string;
                     text_color?: string;
@@ -71,16 +82,12 @@ declare global {
                 headerColor: string;
                 backgroundColor: string;
                 isClosingConfirmationEnabled: boolean;
-                BackButton: {
-                    isVisible: boolean;
-                    onClick(fn: () => void): void;
-                    show(): void;
-                    hide(): void;
-                };
-                HapticFeedback: {
-                    impactOccurred(style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft'): void;
-                    notificationOccurred(type: 'error' | 'success' | 'warning'): void;
-                    selectionChanged(): void;
+                // LocalStorage API
+                localStorage: {
+                    getItem(key: string): string | null;
+                    setItem(key: string, value: string): void;
+                    removeItem(key: string): void;
+                    clear(): void;
                 };
             };
         };
@@ -176,6 +183,31 @@ export const useTelegramApp = () => {
         },
     };
 
+    // LocalStorage методы
+    const localStorage = {
+        getItem: (key: string): string | null => {
+            if (webApp?.localStorage) {
+                return webApp.localStorage.getItem(key);
+            }
+            return null;
+        },
+        setItem: (key: string, value: string): void => {
+            if (webApp?.localStorage) {
+                webApp.localStorage.setItem(key, value);
+            }
+        },
+        removeItem: (key: string): void => {
+            if (webApp?.localStorage) {
+                webApp.localStorage.removeItem(key);
+            }
+        },
+        clear: (): void => {
+            if (webApp?.localStorage) {
+                webApp.localStorage.clear();
+            }
+        },
+    };
+
     return {
         isAvailable,
         user,
@@ -187,5 +219,6 @@ export const useTelegramApp = () => {
         showBackButton,
         hideBackButton,
         hapticFeedback,
+        localStorage,
     };
 }; 

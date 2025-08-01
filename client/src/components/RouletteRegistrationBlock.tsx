@@ -18,7 +18,7 @@ const RouletteRegistrationBlock: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { registerUser } = useAuth();
-  const { hapticFeedback, showMainButton, hideMainButton } = useTelegramApp();
+  const { hapticFeedback } = useTelegramApp();
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -87,12 +87,6 @@ const RouletteRegistrationBlock: React.FC = () => {
       setIsSubmitting(false);
     }
   };
-
-  // Показываем кнопку в Telegram Web App
-  React.useEffect(() => {
-    showMainButton('Зарегистрироваться', handleSubmit);
-    return () => hideMainButton();
-  }, [formData, isSubmitting]);
 
   return (
     <div className={styles.wrapper}>

@@ -5,6 +5,8 @@ import { trpc, createTRPCClient } from './trpc';
 import App from './App';
 import './index.css';
 import { AuthProvider } from './contexts/AuthContext';
+import { RouterProvider } from 'react-router-dom';
+import router from './routes/router';
 
 const queryClient = new QueryClient();
 const trpcClient = createTRPCClient();
@@ -14,7 +16,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <QueryClientProvider client={queryClient}>
             <trpc.Provider client={trpcClient} queryClient={queryClient}>
                 <AuthProvider>
-                    <App />
+                    <RouterProvider router={router} />
                 </AuthProvider>
             </trpc.Provider>
         </QueryClientProvider>

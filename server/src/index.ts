@@ -1,9 +1,9 @@
 import { env } from './env';
 import { createServer } from './server';
-import { loadBots } from './bots/manager';
 import { logger } from './logger';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import {loadBots} from "./bots/manager";
 
 const execAsync = promisify(exec);
 
@@ -17,7 +17,7 @@ async function main() {
     }
 
     const server = createServer();
-    await loadBots();
+    await loadBots(); // Временно отключено для тестирования
     server.listen(env.PORT);
     logger.info(`tRPC server running on port ${env.PORT}`);
 }

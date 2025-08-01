@@ -103,4 +103,36 @@ export const userProcedures = {
                 iban: input.iban,
             });
         }),
+
+    // Получить баланс пользователя
+    getUserBalance: publicProcedure
+        .input(z.object({ telegramId: z.number() }))
+        .query(async ({ input }) => {
+            // Пока возвращаем моковые данные
+            // В будущем здесь будет логика получения баланса из базы данных
+            return {
+                balance: 0.00,
+                currency: 'EUR',
+                dailyChange: 5.21,
+                exchangeRate: 1.135,
+            };
+        }),
+
+    // Получить статистику пользователя
+    getUserStats: publicProcedure
+        .input(z.object({ telegramId: z.number() }))
+        .query(async ({ input }) => {
+            const user = await userRepo.findByTelegramId(input.telegramId);
+            if (!user) return null;
+
+            // Пока возвращаем моковые данные
+            return {
+                daysInProject: user.created_at ? 
+                    Math.ceil((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0,
+                totalTrades: 0,
+                successfulTrades: 0,
+                totalWinnings: 0.00,
+                status: 'Партнер',
+            };
+        }),
 };

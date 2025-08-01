@@ -1,14 +1,18 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import styles from './Navbar.module.css';
 import { ReactComponent as Withdraw } from '../assets/nav/withdraw.svg';
 import { ReactComponent as Manager } from '../assets/nav/manager.svg';
 import { ReactComponent as History } from '../assets/nav/history.svg';
 import { ReactComponent as Success } from '../assets/withdraw/success.svg';
-import {NavLink} from "react-router-dom";
+import { NavLink } from "react-router-dom";
+import { useAuth } from '../contexts/AuthContext';
+import { useTelegramApp } from '../hooks/useTelegramApp';
 
 const Navbar: React.FC = () => {
     const [isShowModal, setIsShowModal] = useState(false);
     const [isShowToast, setIsToast] = useState(false);
+    const { user } = useAuth();
+    const { user: telegramUser } = useTelegramApp();
 
     const openWithdrawWindow = () => {
         setIsShowModal(true)
@@ -25,6 +29,9 @@ const Navbar: React.FC = () => {
             setIsToast(false)
         }, 2000)
     }
+
+    // Получаем данные пользователя для отображения в профиле
+    const displayName = user?.full_name || telegramUser?.first_name || 'Пользователь';
 
     return (
         <>

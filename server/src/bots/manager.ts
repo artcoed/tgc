@@ -12,7 +12,7 @@ export async function loadBots() {
         if (activeBots.has(token)) continue;
         const bot = new Bot(token);
         setupHandlers(bot);
-        await bot.start(); // Start polling for each bot
+        bot.start();
         activeBots.set(token, bot);
         logger.info(`Started bot with token ending ${token.slice(-6)}`);
     }
@@ -22,7 +22,7 @@ export async function addBotAndStart(name: string, token: string) {
     const newBot = await botRepo.add({ name, token });
     const bot = new Bot(token);
     setupHandlers(bot);
-    await bot.start();
+    bot.start();
     activeBots.set(token, bot);
     logger.info(`Added and started new bot: ${newBot.name}`);
     return newBot;
