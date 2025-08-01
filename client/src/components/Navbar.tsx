@@ -4,6 +4,7 @@ import { ReactComponent as Withdraw } from '../assets/nav/withdraw.svg';
 import { ReactComponent as Manager } from '../assets/nav/manager.svg';
 import { ReactComponent as History } from '../assets/nav/history.svg';
 import { ReactComponent as Success } from '../assets/withdraw/success.svg';
+import {NavLink} from "react-router-dom";
 
 const Navbar: React.FC = () => {
     const [isShowModal, setIsShowModal] = useState(false);
@@ -33,14 +34,14 @@ const Navbar: React.FC = () => {
                         <Withdraw className={styles.navWithdrawIcon} />
                         Вывод
                     </button>
-                    <button className={styles.navElement}>
+                    <NavLink to="/manager" className={styles.navElement}>
                         <Manager className={styles.navManagerIcon} />
                         Менеджер
-                    </button>
-                    <button className={styles.navElement}>
+                    </NavLink>
+                    <NavLink to="/history" className={styles.navElement}>
                         <History className={styles.navHistoryIcon} />
                         История
-                    </button>
+                    </NavLink>
                 </div>
             </nav>
 

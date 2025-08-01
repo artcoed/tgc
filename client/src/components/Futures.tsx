@@ -4,6 +4,7 @@ import styles from './Futures.module.css';
 import Navbar from './Navbar';
 import { ReactComponent as BackArrowIcon } from '../assets/roulette/backArrow.svg';
 import { ReactComponent as ClearIcon } from '../assets/roulette/clear.svg';
+import {NavLink} from "react-router-dom";
 
 // Define interface for data points
 interface DataPoint {
@@ -361,9 +362,9 @@ const Futures: React.FC<FuturesProps> = ({ height = 400 }) => {
         <div className={styles.wrapper}>
             <Navbar />
             <div className={styles.container} ref={containerRef}>
-                <button className={styles.backArrow}>
+                <NavLink to='/' className={styles.backArrow}>
                     <BackArrowIcon className={styles.backArrowIcon} />
-                </button>
+                </NavLink>
 
                 <div className={styles.futuresTitle}>
                     BaseCoin

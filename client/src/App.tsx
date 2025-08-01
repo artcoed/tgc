@@ -16,7 +16,7 @@ const App: React.FC = () => {
     return (
         <div>
             {/*<p>Данные: {JSON.stringify(data)}</p>*/}
-            <MainPage />
+            <MainPage/>
         </div>
     );
 };

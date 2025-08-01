@@ -4,15 +4,16 @@ import Navbar from "./Navbar";
 import { ReactComponent as BackArrowIcon } from '../assets/roulette/backArrow.svg';
 import { ReactComponent as PartnerIcon } from '../assets/profile/partnerStatusIcon.svg';
 import userAvatar from '../assets/main/userAvatar.png';
+import {NavLink} from "react-router-dom";
 
 const UserProfile: React.FC = () => {
   return (
       <div className={styles.wrapper}>
         <Navbar />
         <div className={styles.container}>
-            <button className={styles.backArrow}>
+            <NavLink to='/' className={styles.backArrow}>
                 <BackArrowIcon className={styles.backArrowIcon} />
-            </button>
+            </NavLink>
 
             <img
                 className={styles.userAvatar}

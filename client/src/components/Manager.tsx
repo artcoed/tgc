@@ -3,15 +3,16 @@ import styles from './Manager.module.css';
 import Navbar from "./Navbar";
 import { ReactComponent as BackArrowIcon } from '../assets/roulette/backArrow.svg';
 import { ReactComponent as Warning } from '../assets/manager/warning.svg';
+import {NavLink} from "react-router-dom";
 
 const Manager: React.FC = () => {
   return (
       <div className={styles.wrapper}>
         <Navbar />
         <div className={styles.container}>
-            <button className={styles.backArrow}>
+            <NavLink to='/' className={styles.backArrow}>
                 <BackArrowIcon className={styles.backArrowIcon} />
-            </button>
+            </NavLink>
 
             <div className={styles.title}>
                 Менеджер

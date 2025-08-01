@@ -6,6 +6,7 @@ import { ReactComponent as ArrowIcon } from '../assets/roulette/arrow.svg';
 import { ReactComponent as LoseIcon } from '../assets/roulette/loseIcon.svg';
 import wheelImage from '../assets/roulette/wheel.png';
 import Navbar from "./Navbar";
+import {NavLink} from "react-router-dom";
 
 const RouletteWindow: React.FC = () => {
     const [isSpinning, setIsSpinning] = useState(false);
@@ -34,7 +35,7 @@ const RouletteWindow: React.FC = () => {
         if (usedNumbers.size >= numbers.length) setUsedNumbers(new Set());
         const randomRotations = Math.floor(Math.random() * 5) + 3;
         const randomOffset = Math.floor(Math.random() * 360);
-        const totalDegrees = randomRotations * 360 + randomOffset;и
+        const totalDegrees = randomRotations * 360 + randomOffset;
 
         if (wheelRef.current) {
             wheelRef.current.style.transform = `rotate(${totalDegrees}deg)`;
@@ -146,9 +147,9 @@ const RouletteWindow: React.FC = () => {
             <Navbar />
 
             <div className={styles.container}>
-                <button className={styles.backArrow}>
+                <NavLink to='/' className={styles.backArrow}>
                     <BackArrowIcon className={styles.backArrowIcon} />
-                </button>
+                </NavLink>
                 <div className={styles.rouletteTitle}>Рулетка</div>
                 <div className={styles.rouletteDesc}>Проверь свое везение</div>
 

@@ -10,12 +10,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fluent/bundle": "^0.19.1",
+    "@fluent/react": "^0.15.2",
     "@svgr/rollup": "^8.1.0",
     "@tanstack/react-query": "^5.83.1",
     "@trpc/client": "^11.4.3",
     "@trpc/react-query": "^11.4.3",
+    "@types/react-router-dom": "^5.3.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-router-dom": "^7.7.1",
     "vite-plugin-dts": "^4.5.4"
   },
   "devDependencies": {

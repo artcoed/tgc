@@ -8,6 +8,7 @@ import { ReactComponent as TradeIcon } from '../assets/main/tradeIcon.svg';
 import { ReactComponent as RouletteIcon } from '../assets/main/rouletteIcon.svg';
 import { ReactComponent as BonusIcon } from '../assets/main/bonusIcon.svg';
 import userAvatar from '../assets/main/userAvatar.png';
+import {NavLink} from "react-router-dom";
 
 const MainPage: React.FC = () => {
   return (
@@ -70,7 +71,7 @@ const MainPage: React.FC = () => {
             </div>
 
             <div className={styles.navigationButtonsContainer}>
-                <button className={styles.navigationButtonContainer}>
+                <NavLink to="/trading" className={styles.navigationButtonContainer}>
                     <div className={styles.navigationButtonLeftContainer}>
                         <TradeIcon className={styles.navigationButtonIcon} />
                         <div className={styles.navigationButtonText}>
@@ -78,9 +79,9 @@ const MainPage: React.FC = () => {
                         </div>
                     </div>
                     <NextArrowIcon className={styles.nextArrowIcon} />
-                </button>
+                </NavLink>
 
-                <button className={styles.navigationButtonContainer}>
+                <NavLink to="/roulette" className={styles.navigationButtonContainer}>
                     <div className={styles.navigationButtonLeftContainer}>
                         <RouletteIcon className={styles.navigationButtonIcon} />
                         <div className={styles.navigationButtonText}>
@@ -88,9 +89,9 @@ const MainPage: React.FC = () => {
                         </div>
                     </div>
                     <NextArrowIcon className={styles.nextArrowIcon} />
-                </button>
+                </NavLink>
 
-                <button className={styles.navigationButtonContainer}>
+                <NavLink to="/bonuses" className={styles.navigationButtonContainer}>
                     <div className={styles.navigationButtonLeftContainer}>
                         <BonusIcon className={styles.navigationButtonIcon} />
                         <div className={styles.navigationButtonText}>
@@ -98,7 +99,7 @@ const MainPage: React.FC = () => {
                         </div>
                     </div>
                     <NextArrowIcon className={styles.nextArrowIcon} />
-                </button>
+                </NavLink>
             </div>
         </div>
       </div>

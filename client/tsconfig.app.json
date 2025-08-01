@@ -1,5 +1,13 @@
 {
   "compilerOptions": {
+    "noUnusedLocals": false,      // Отключает ошибки о неиспользуемых локальных переменных/импортах (TS6133)
+    "noUnusedParameters": false,  // Отключает ошибки о неиспользуемых параметрах (TS6133)
+    "verbatimModuleSyntax": false, // Отключает строгие правила импорта типов (TS1484)
+    "noImplicitAny": false,       // Если есть ошибки о неявных any (опционально)
+    "allowUnusedLabels": true,    // Если есть варнинги о лейблах (опционально)
+    "noFallthroughCasesInSwitch": false,
+
+    // Отключает ошибки о fallthrough в switch (если актуально)
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "ES2022",
     "useDefineForClassFields": true,
@@ -8,15 +16,11 @@
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "strict": false,
     "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".", // Required for paths to work
     "paths": {

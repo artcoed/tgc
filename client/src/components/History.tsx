@@ -4,15 +4,16 @@ import Navbar from "./Navbar";
 import { ReactComponent as BackArrowIcon } from '../assets/roulette/backArrow.svg';
 import { ReactComponent as Deposit } from '../assets/history/Deposit.svg';
 import { ReactComponent as Withdraw } from '../assets/history/Withdraw.svg';
+import {NavLink} from "react-router-dom";
 
 const History: React.FC = () => {
   return (
       <div className={styles.wrapper}>
         <Navbar />
         <div className={styles.container}>
-            <button className={styles.backArrow}>
+            <NavLink to='/' className={styles.backArrow}>
                 <BackArrowIcon className={styles.backArrowIcon} />
-            </button>
+            </NavLink>
 
             <div className={styles.title}>
                 История
