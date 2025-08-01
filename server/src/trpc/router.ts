@@ -8,11 +8,12 @@ export const publicProcedure = t.procedure;
 export const router = t.router;
 
 // Import procedures after defining exports to avoid circular dependency
-import { botProcedures } from './procedures';
+import { botProcedures, userProcedures } from './procedures';
 
 // Create and export appRouter
 export const appRouter = router({
     ...botProcedures,
+    ...userProcedures,
 });
 
 export type AppRouter = typeof appRouter;

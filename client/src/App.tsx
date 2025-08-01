@@ -1,24 +1,42 @@
 import React from 'react';
-import { trpc } from './trpc';
-import Futures from "@/components/Futures.tsx";
 import './App.css';
-import RouletteWindow from "@/components/RouletteWindow.tsx";
-import History from "@/components/History.tsx";
 import MainPage from "@/components/MainPage.tsx";
-import Bonuses from "@/components/Bonuses.tsx";
+import RouletteRegistrationBlock from "@/components/RouletteRegistrationBlock.tsx";
+import { useAuth } from './contexts/AuthContext';
 
-const App: React.FC = () => {
-    const { data, isLoading, error } = trpc.listBots.useQuery();
+const AppContent: React.FC = () => {
+    const { isRegistered, isLoading } = useAuth();
 
-    // if (isLoading) return <div>Загрузка...</div>;
-    // if (error) return <div>Ошибка: {error.message}</div>;
+    // Показываем загрузку пока проверяем статус регистрации
+    if (isLoading) {
+        return (
+            <div style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                height: '100vh',
+                fontSize: '18px'
+            }}>
+                Загрузка...
+            </div>
+        );
+    }
 
+    // Если пользователь не зарегистрирован, показываем форму регистрации
+    if (!isRegistered) {
+        return <RouletteRegistrationBlock />;
+    }
+
+    // Если пользователь зарегистрирован, показываем основное приложение
     return (
         <div>
-            {/*<p>Данные: {JSON.stringify(data)}</p>*/}
             <MainPage/>
         </div>
     );
+};
+
+const App: React.FC = () => {
+    return <AppContent />;
 };
 
 export default App;
