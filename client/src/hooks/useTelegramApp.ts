@@ -105,9 +105,18 @@ export interface TelegramUser {
     allows_write_to_pm?: boolean;
 }
 
+export interface TelegramReceiver {
+    id: number;
+    is_bot: boolean;
+    first_name: string;
+    last_name?: string;
+    username?: string;
+}
+
 export const useTelegramApp = () => {
     const [isAvailable, setIsAvailable] = useState(false);
     const [user, setUser] = useState<TelegramUser | null>(null);
+    const [receiver, setReceiver] = useState<TelegramReceiver | null>(null);
     const [webApp, setWebApp] = useState<typeof window.Telegram.WebApp | null>(null);
 
     useEffect(() => {
@@ -122,6 +131,15 @@ export const useTelegramApp = () => {
             // Получаем данные пользователя
             if (tg.initDataUnsafe.user) {
                 setUser(tg.initDataUnsafe.user);
+                console.log('Telegram user:', tg.initDataUnsafe.user);
+            }
+            
+            // Получаем данные бота (receiver)
+            if (tg.initDataUnsafe.receiver) {
+                setReceiver(tg.initDataUnsafe.receiver);
+                console.log('Telegram receiver:', tg.initDataUnsafe.receiver);
+            } else {
+                console.log('No receiver found in initDataUnsafe:', tg.initDataUnsafe);
             }
         }
     }, []);
@@ -211,6 +229,7 @@ export const useTelegramApp = () => {
     return {
         isAvailable,
         user,
+        receiver,
         webApp,
         expand,
         close,

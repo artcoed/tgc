@@ -10,7 +10,7 @@ import { useTelegramApp } from '../hooks/useTelegramApp';
 import { trpc } from '../trpc';
 
 const UserProfile: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, botId, logout } = useAuth();
   const { user: telegramUser } = useTelegramApp();
 
   // Получаем данные пользователя из Telegram или базы данных
@@ -20,8 +20,8 @@ const UserProfile: React.FC = () => {
   
   // Загружаем статистику пользователя
   const { data: statsData, isLoading: isLoadingStats } = trpc.getUserStats.useQuery(
-    { telegramId: Number(userId) },
-    { enabled: !!userId && userId !== 'N/A' }
+    { telegramId: Number(userId), botId: botId || 1 },
+    { enabled: !!userId && userId !== 'N/A' && !!botId }
   );
   
   // Вычисляем время в проекте
@@ -81,13 +81,6 @@ const UserProfile: React.FC = () => {
             </div>
           </div>
         </div>
-
-        <button 
-          className={styles.logoutButton}
-          onClick={handleLogout}
-        >
-          Выйти из аккаунта
-        </button>
       </div>
     </div>
   );

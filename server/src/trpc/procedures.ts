@@ -1,13 +1,15 @@
 ﻿import { z } from 'zod';
-import { publicProcedure } from './router';
+import {publicProcedure, router} from './router';
 import { addBotAndStart, removeBotAndStop } from '../bots/manager';
 import { BotRepository } from '../db/repositories/BotRepository';
 import { UserRepository } from '../db/repositories/UserRepository';
+import { RouletteService } from '../services/RouletteService';
 
 const botRepo = new BotRepository();
 const userRepo = new UserRepository();
+const rouletteService = new RouletteService();
 
-export const botProcedures = {
+export const botProcedures = router({
     listBots: publicProcedure.query(async () => {
         return botRepo.getAll();
     }),
@@ -24,27 +26,34 @@ export const botProcedures = {
             await removeBotAndStop(input.id);
             return { success: true };
         }),
-};
+});
 
-export const userProcedures = {
+export const userProcedures = router({
     // Получить информацию о текущем пользователе
     getCurrentUser: publicProcedure
-        .input(z.object({ telegramId: z.number() }))
+        .input(z.object({ 
+            telegramId: z.number(),
+            botId: z.number()
+        }))
         .query(async ({ input }) => {
-            return userRepo.findByTelegramId(input.telegramId);
+            return userRepo.findByTelegramId(input.telegramId, input.botId);
         }),
 
     // Проверить, зарегистрирован ли пользователь
     isUserRegistered: publicProcedure
-        .input(z.object({ telegramId: z.number() }))
+        .input(z.object({ 
+            telegramId: z.number(),
+            botId: z.number()
+        }))
         .query(async ({ input }) => {
-            return userRepo.isFullyRegistered(input.telegramId);
+            return userRepo.isFullyRegistered(input.telegramId, input.botId);
         }),
 
     // Создать или обновить пользователя из Telegram Web Apps
     upsertUserFromTelegram: publicProcedure
         .input(z.object({
             telegramId: z.number(),
+            botId: z.number(),
             firstName: z.string().optional(),
             lastName: z.string().optional(),
             username: z.string().optional(),
@@ -53,11 +62,11 @@ export const userProcedures = {
             allowsWriteToPm: z.boolean().optional(),
         }))
         .mutation(async ({ input }) => {
-            const existingUser = await userRepo.findByTelegramId(input.telegramId);
+            const existingUser = await userRepo.findByTelegramId(input.telegramId, input.botId);
             
             if (existingUser) {
                 // Обновляем существующего пользователя
-                return userRepo.updateByTelegramId(input.telegramId, {
+                return userRepo.updateByTelegramId(input.telegramId, input.botId, {
                     first_name: input.firstName || existingUser.first_name,
                     last_name: input.lastName || existingUser.last_name,
                     username: input.username || existingUser.username,
@@ -69,6 +78,7 @@ export const userProcedures = {
                 // Создаем нового пользователя
                 return userRepo.create({
                     telegram_id: input.telegramId,
+                    bot_id: input.botId,
                     first_name: input.firstName || null,
                     last_name: input.lastName || null,
                     username: input.username || null,
@@ -80,6 +90,13 @@ export const userProcedures = {
                     city: null,
                     phone: null,
                     iban: null,
+                    balance: 1000.00,
+                    currency: 'EUR',
+                    roulette_daily_attempts: 5,
+                    roulette_last_reset_date: new Date(),
+                    roulette_total_wins: 0,
+                    roulette_total_losses: 0,
+                    roulette_total_winnings: 0.00,
                 });
             }
         }),
@@ -88,6 +105,7 @@ export const userProcedures = {
     completeRegistration: publicProcedure
         .input(z.object({
             telegramId: z.number(),
+            botId: z.number(),
             fullName: z.string(),
             age: z.number(),
             city: z.string(),
@@ -95,7 +113,7 @@ export const userProcedures = {
             iban: z.string(),
         }))
         .mutation(async ({ input }) => {
-            return userRepo.updateByTelegramId(input.telegramId, {
+            return userRepo.updateByTelegramId(input.telegramId, input.botId, {
                 full_name: input.fullName,
                 age: input.age,
                 city: input.city,
@@ -106,7 +124,10 @@ export const userProcedures = {
 
     // Получить баланс пользователя
     getUserBalance: publicProcedure
-        .input(z.object({ telegramId: z.number() }))
+        .input(z.object({ 
+            telegramId: z.number(),
+            botId: z.number()
+        }))
         .query(async ({ input }) => {
             // Пока возвращаем моковые данные
             // В будущем здесь будет логика получения баланса из базы данных
@@ -120,9 +141,12 @@ export const userProcedures = {
 
     // Получить статистику пользователя
     getUserStats: publicProcedure
-        .input(z.object({ telegramId: z.number() }))
+        .input(z.object({ 
+            telegramId: z.number(),
+            botId: z.number()
+        }))
         .query(async ({ input }) => {
-            const user = await userRepo.findByTelegramId(input.telegramId);
+            const user = await userRepo.findByTelegramId(input.telegramId, input.botId);
             if (!user) return null;
 
             // Пока возвращаем моковые данные
@@ -135,4 +159,28 @@ export const userProcedures = {
                 status: 'Партнер',
             };
         }),
-};
+});
+
+export const rouletteProcedures = router({
+    // Получить информацию о рулетке для пользователя
+    getRouletteInfo: publicProcedure
+        .input(z.object({ 
+            telegramId: z.number(),
+            botId: z.number()
+        }))
+        .query(async ({ input }) => {
+            return rouletteService.getUserRouletteInfo(input.telegramId, input.botId);
+        }),
+
+    // Сделать ставку в рулетке
+    placeBet: publicProcedure
+        .input(z.object({
+            telegramId: z.number(),
+            botId: z.number(),
+            betAmount: z.number().min(10),
+            betColor: z.enum(['black', 'red', 'green']),
+        }))
+        .mutation(async ({ input }) => {
+            return rouletteService.placeBet(input.telegramId, input.botId, input.betAmount, input.betColor);
+        }),
+});

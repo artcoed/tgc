@@ -8,6 +8,7 @@ interface AuthContextType {
     isLoading: boolean;
     user: any;
     telegramUser: any;
+    botId: number | null;
     authToken: string | null;
     registerUser: (userData: {
         fullName: string;
@@ -34,12 +35,13 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-    const { user: telegramUser, isAvailable } = useTelegramApp();
+    const { user: telegramUser, receiver, isAvailable } = useTelegramApp();
     const { saveAuthData, getAuthData, clearAuthData, isAuthenticated } = useAuthStorage();
     const [isRegistered, setIsRegistered] = useState(false);
     const [user, setUser] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [authToken, setAuthToken] = useState<string | null>(null);
+    const [botId, setBotId] = useState<number | null>(null);
 
     // Мутации tRPC
     const upsertUserMutation = trpc.upsertUserFromTelegram.useMutation();
@@ -60,21 +62,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Запрос для проверки регистрации (только если нет сохраненных данных)
     const { data: isUserRegistered, isLoading: isCheckingRegistration } = trpc.isUserRegistered.useQuery(
-        { telegramId: telegramUser?.id || 0 },
-        { enabled: !!telegramUser?.id && !user } // Проверяем только если нет сохраненных данных
+        { telegramId: telegramUser?.id || 0, botId: botId || 1 },
+        { enabled: !!telegramUser?.id && !!botId && !user } // Проверяем только если нет сохраненных данных
     );
 
     // Запрос для получения данных пользователя (только если нет сохраненных данных)
     const { data: currentUser, isLoading: isLoadingUser } = trpc.getCurrentUser.useQuery(
-        { telegramId: telegramUser?.id || 0 },
-        { enabled: !!telegramUser?.id && !user } // Загружаем только если нет сохраненных данных
+        { telegramId: telegramUser?.id || 0, botId: botId || 1 },
+        { enabled: !!telegramUser?.id && !!botId && !user } // Загружаем только если нет сохраненных данных
     );
+
+    // Эффект для установки bot_id
+    useEffect(() => {
+        if (receiver) {
+            setBotId(receiver.id);
+            console.log('Bot ID set from receiver:', receiver.id);
+        } else {
+            // Fallback: используем дефолтный bot_id = 1
+            setBotId(1);
+            console.log('Using fallback bot ID: 1');
+        }
+    }, [receiver]);
 
     // Эффект для инициализации пользователя из Telegram
     useEffect(() => {
-        if (telegramUser && isAvailable && !user) {
+        if (telegramUser && botId && isAvailable && !user) {
+            console.log('Initializing user with botId:', botId);
             upsertUserMutation.mutate({
                 telegramId: telegramUser.id,
+                botId: botId,
                 firstName: telegramUser.first_name,
                 lastName: telegramUser.last_name,
                 username: telegramUser.username,
@@ -83,7 +99,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 allowsWriteToPm: telegramUser.allows_write_to_pm,
             });
         }
-    }, [telegramUser, isAvailable, user]);
+    }, [telegramUser, botId, isAvailable, user]);
 
     // Эффект для обновления состояния регистрации
     useEffect(() => {
@@ -126,13 +142,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         phone: string;
         iban: string;
     }) => {
-        if (!telegramUser?.id) {
-            throw new Error('Telegram user not available');
+        if (!telegramUser?.id || !botId) {
+            throw new Error('Telegram user or bot not available');
         }
 
         try {
             const result = await completeRegistrationMutation.mutateAsync({
                 telegramId: telegramUser.id,
+                botId: botId,
                 ...userData,
             });
 
@@ -167,6 +184,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isLoading,
         user,
         telegramUser,
+        botId,
         authToken,
         registerUser,
         logout,

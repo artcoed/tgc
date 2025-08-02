@@ -4,18 +4,26 @@ import { ReactComponent as ClearIcon } from '../assets/roulette/clear.svg';
 import { ReactComponent as BackArrowIcon } from '../assets/roulette/backArrow.svg';
 import { ReactComponent as ArrowIcon } from '../assets/roulette/arrow.svg';
 import { ReactComponent as LoseIcon } from '../assets/roulette/loseIcon.svg';
+import { ReactComponent as WinIcon } from '../assets/roulette/winIcon.svg';
 import wheelImage from '../assets/roulette/wheel.png';
 import Navbar from "./Navbar";
 import {NavLink} from "react-router-dom";
+import { useAuth } from '../contexts/AuthContext';
+import { trpc } from '../trpc';
 
 const RouletteWindow: React.FC = () => {
+    const { user, telegramUser, botId } = useAuth();
     const [isSpinning, setIsSpinning] = useState(false);
     const [result, setResult] = useState<number | null>(null);
-    const [usedNumbers, setUsedNumbers] = useState<Set<number>>(new Set());
-    const [lastBetColor, setLastBetColor] = useState<'black' | 'red' | 'green' | null>(null);
-    const [timerText, setTimerText] = useState('');
+    const [betAmount, setBetAmount] = useState(100);
+    const [showResultModal, setShowResultModal] = useState(false);
+    const [modalResult, setModalResult] = useState<{
+        isWin: boolean;
+        winAmount: number;
+        newBalance: number;
+        attemptsLeft: number;
+    } | null>(null);
     const wheelRef = useRef<HTMLImageElement>(null);
-    const [spinCount, setSpinCount] = useState(0);
     const numbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
     const colorMap: { [key: number]: 'black' | 'red' | 'green' } = {
         0: 'green',
@@ -27,12 +35,22 @@ const RouletteWindow: React.FC = () => {
         26: 'black'
     };
 
-    const startSpin = useCallback((color: 'black' | 'red' | 'green') => {
-        if (isSpinning) return;
+    // tRPC queries and mutations
+    const { data: rouletteInfo, refetch: refetchRouletteInfo } = trpc.getRouletteInfo.useQuery(
+        { telegramId: telegramUser?.id || 0, botId: botId || 1 },
+        { enabled: !!telegramUser?.id && !!botId }
+    );
+    const placeBetMutation = trpc.placeBet.useMutation();
+
+    const startSpin = useCallback(async (color: 'black' | 'red' | 'green') => {
+        if (isSpinning || !telegramUser?.id) return;
+        
         setIsSpinning(true);
         setResult(null);
-        setLastBetColor(color);
-        if (usedNumbers.size >= numbers.length) setUsedNumbers(new Set());
+        setShowResultModal(false);
+        setModalResult(null);
+
+        // Анимация колеса
         const randomRotations = Math.floor(Math.random() * 5) + 3;
         const randomOffset = Math.floor(Math.random() * 360);
         const totalDegrees = randomRotations * 360 + randomOffset;
@@ -41,104 +59,93 @@ const RouletteWindow: React.FC = () => {
             wheelRef.current.style.transform = `rotate(${totalDegrees}deg)`;
             wheelRef.current.style.transition = 'transform 3s ease-out';
 
-            const spinTimeout = setTimeout(() => {
-                const finalAngle = totalDegrees % 360;
-                const segmentAngle = 360 / numbers.length;
-                const adjustedAngle = (360 - finalAngle + segmentAngle / 2) % 360;
-                const segmentIndex = Math.floor(adjustedAngle / segmentAngle) % numbers.length;
-                let newResult = numbers[segmentIndex];
-                while (usedNumbers.has(newResult)) {
-                    const nextIndex = (segmentIndex + 1) % numbers.length;
-                    newResult = numbers[nextIndex];
-                }
-                console.log(`Final Angle: ${finalAngle}, Adjusted Angle: ${adjustedAngle}, Segment Index: ${segmentIndex}, Result: ${newResult}, Expected at Top: ${numbers[(segmentIndex + numbers.length - Math.floor(360 / segmentAngle / 2)) % numbers.length]}, Spin Count: ${spinCount + 1}`);
-                const newSet = new Set(usedNumbers);
-                newSet.add(newResult);
-                setUsedNumbers(prev => (newSet.size > 37 ? new Set([newResult]) : newSet));
-                setResult(newResult);
+            // Делаем ставку через tRPC
+            try {
+                const betResult = await placeBetMutation.mutateAsync({
+                    telegramId: telegramUser.id,
+                    botId: botId || 1,
+                    betAmount,
+                    betColor: color,
+                });
+
+                // Ждем окончания анимации
+                setTimeout(() => {
+                    setResult(betResult.number);
+                    setModalResult({
+                        isWin: betResult.isWin,
+                        winAmount: betResult.winAmount,
+                        newBalance: betResult.newBalance,
+                        attemptsLeft: betResult.attemptsLeft,
+                    });
+                    setShowResultModal(true);
+                    setIsSpinning(false);
+                    
+                    // Обновляем информацию о рулетке
+                    refetchRouletteInfo();
+                }, 3000);
+            } catch (error) {
+                console.error('Bet error:', error);
                 setIsSpinning(false);
-                setSpinCount(prev => prev + 1);
-                if ((spinCount + 1) % 20 === 0) {
-                    console.log('Resetting after 20 spins to prevent memory buildup');
-                    setUsedNumbers(new Set());
-                    setResult(null);
-                }
-            }, 3000);
-
-            return () => clearTimeout(spinTimeout);
-        }
-    }, [isSpinning, usedNumbers, spinCount]);
-
-    useEffect(() => {
-        let timer: NodeJS.Timeout | null = null;
-        let time: number = 0;
-
-        const updateTimer = () => {
-            if (!isSpinning) {
-                setTimerText('');
-                return;
+                // Показываем ошибку пользователю
+                alert(error instanceof Error ? error.message : 'Ошибка при размещении ставки');
             }
-            time = 3.0;
-            setTimerText('Прокрутка началась');
-            timer = setInterval(() => {
-                time -= 0.1;
-                if (time <= 0.0) {
-                    if (timer) clearInterval(timer);
-                    setTimerText('0.0s');
-                    timer = null;
-                } else if (time <= 2.0) {
-                    setTimerText(`${time.toFixed(1)}s`);
-                }
-            }, 100);
-        };
-
-        if (isSpinning) updateTimer();
-
-        return () => {
-            if (timer) clearInterval(timer);
-            const cleanUp = setTimeout(() => {}, 0);
-            clearTimeout(cleanUp);
-        };
-    }, [isSpinning]);
-
-    useEffect(() => {
-        let isMounted = true;
-        if (!isSpinning && wheelRef.current) {
-            wheelRef.current.style.transition = 'none';
         }
-        return () => {
-            isMounted = false;
-        };
-    }, [isSpinning]);
+    }, [isSpinning, betAmount, telegramUser?.id, placeBetMutation, refetchRouletteInfo]);
+
+    const handleBetAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = parseFloat(e.target.value) || 0;
+        setBetAmount(Math.max(10, Math.min(value, rouletteInfo?.balance || 1000)));
+    };
+
+    const clearBetAmount = () => {
+        setBetAmount(100);
+    };
+
+    const closeResultModal = () => {
+        setShowResultModal(false);
+        setModalResult(null);
+    };
 
     const getStatus = () => {
-        if (result === null || !lastBetColor) return '';
+        if (result === null) return '';
         const resultColor = colorMap[result];
-        return resultColor === lastBetColor ? 'Выйграл!' : 'Проиграл!';
+        return modalResult?.isWin ? 'Выиграл!' : 'Проиграл!';
     };
+
+    const maxBet = rouletteInfo ? Math.min(rouletteInfo.balance * 0.95, rouletteInfo.balance) : 1000;
 
     return (
         <div className={styles.wrapper}>
-            { false && (
+            {showResultModal && modalResult && (
                 <div className={styles.modalResultWindowContainer}>
-                    <div className={`${styles.modalResultWindow} ${styles.modalLoseWindow}`}>
-                        <button className={styles.closeIconContainer}>
+                    <div className={`${styles.modalResultWindow} ${modalResult.isWin ? styles.modalWinWindow : styles.modalLoseWindow}`}>
+                        <button className={styles.closeIconContainer} onClick={closeResultModal}>
                             ×
                         </button>
                         <div className={styles.iconContainer}>
-                            <LoseIcon className={styles.resultIconWindow} />
+                            {modalResult.isWin ? (
+                                <WinIcon className={styles.resultIconWindow} />
+                            ) : (
+                                <LoseIcon className={styles.resultIconWindow} />
+                            )}
                         </div>
                         <div className={styles.modalResultTitle}>
-                            ВЫИГРЫШ!
+                            {modalResult.isWin ? 'ВЫИГРЫШ!' : 'ПРОИГРЫШ!'}
                         </div>
                         <div className={styles.modalResultDescription}>
-                            Поздравляем с победой!
+                            {modalResult.isWin ? 'Поздравляем с победой!' : 'Попробуйте еще раз!'}
                         </div>
                         <div className={styles.modalResultValue}>
-                            -155.42
+                            {modalResult.isWin ? `+${modalResult.winAmount.toFixed(2)}` : `-${betAmount.toFixed(2)}`}
                         </div>
                         <div className={styles.modalResultCurrency}>
-                            EUR
+                            {rouletteInfo?.currency || 'EUR'}
+                        </div>
+                        <div className={styles.modalResultBalance}>
+                            Баланс: {modalResult.newBalance.toFixed(2)} {rouletteInfo?.currency || 'EUR'}
+                        </div>
+                        <div className={styles.modalResultAttempts}>
+                            Осталось попыток: {modalResult.attemptsLeft}/5
                         </div>
                     </div>
                 </div>
@@ -167,37 +174,50 @@ const RouletteWindow: React.FC = () => {
                     <>
                         <div className={styles.betHeaderContainer}>
                             <div className={styles.betHeaderTitle}>Размер ставки</div>
-                            <div className={styles.tryingCount}>5/5 попыток</div>
+                            <div className={styles.tryingCount}>
+                                {rouletteInfo?.attemptsLeft || 5}/5 попыток
+                            </div>
                         </div>
                         <div className={styles.betAmountContainer}>
-                            <input className={styles.betAmount} value={1000} readOnly />
-                            <button className={styles.clearIconContainer}>
+                            <input 
+                                className={styles.betAmount} 
+                                value={betAmount} 
+                                onChange={handleBetAmountChange}
+                                type="number"
+                                min="10"
+                                max={maxBet}
+                                step="10"
+                            />
+                            <button className={styles.clearIconContainer} onClick={clearBetAmount}>
                                 <ClearIcon className={styles.clearIcon} />
                             </button>
                         </div>
                         <div className={styles.limitBetsContainer}>
                             <button className={styles.minBet}>Мин: 10</button>
-                            <button className={styles.maxBet}>Макс: 1005.90</button>
+                            <button className={styles.maxBet}>Макс: {maxBet.toFixed(2)}</button>
+                        </div>
+                        <div className={styles.balanceInfo}>
+                            Баланс: {rouletteInfo?.balance?.toFixed(2) || '0.00'} {rouletteInfo?.currency || 'EUR'}
                         </div>
                         <div className={styles.colorsContainer}>
                             <button
                                 className={`${styles.color} ${styles.colorBlack}`}
                                 onClick={() => startSpin('black')}
-                                disabled={isSpinning}
+                                disabled={isSpinning || (rouletteInfo?.attemptsLeft || 0) <= 0 || !botId}
                             >
                                 x2
                             </button>
                             <button
                                 className={`${styles.color} ${styles.colorRed}`}
                                 onClick={() => startSpin('red')}
-                                disabled={isSpinning}
+                                disabled={isSpinning || (rouletteInfo?.attemptsLeft || 0) <= 0 || !botId}
                             >
                                 x2
                             </button>
                             <button
                                 className={`${styles.color} ${styles.colorGreen}`}
                                 onClick={() => startSpin('green')}
-                                disabled={isSpinning}
+                                disabled={isSpinning || (rouletteInfo?.attemptsLeft || 0) <= 0 || !botId}
                             >
                                 x10
                             </button>
@@ -205,9 +225,9 @@ const RouletteWindow: React.FC = () => {
                     </>
                 )}
 
-                {isSpinning && <div className={styles.timer}>{timerText}</div>}
+                {isSpinning && <div className={styles.timer}>Прокрутка началась</div>}
 
-                {result !== null && (
+                {result !== null && !showResultModal && (
                     <div className={`${styles.result} ${styles[`result${colorMap[result]}`]}`}>
                         Результат: {result} - {getStatus()}
                     </div>

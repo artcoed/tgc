@@ -14,7 +14,7 @@ import { useTelegramApp } from '../hooks/useTelegramApp';
 import { trpc } from '../trpc';
 
 const MainPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, botId } = useAuth();
   const { user: telegramUser } = useTelegramApp();
 
   // Получаем данные пользователя из Telegram или базы данных
@@ -24,13 +24,13 @@ const MainPage: React.FC = () => {
   
   // Загружаем баланс и статистику
   const { data: balanceData, isLoading: isLoadingBalance } = trpc.getUserBalance.useQuery(
-    { telegramId: Number(userId) },
-    { enabled: !!userId && userId !== 'N/A' }
+    { telegramId: Number(userId), botId: botId || 1 },
+    { enabled: !!userId && userId !== 'N/A' && !!botId }
   );
 
   const { data: statsData, isLoading: isLoadingStats } = trpc.getUserStats.useQuery(
-    { telegramId: Number(userId) },
-    { enabled: !!userId && userId !== 'N/A' }
+    { telegramId: Number(userId), botId: botId || 1 },
+    { enabled: !!userId && userId !== 'N/A' && !!botId }
   );
   
   // Вычисляем время в проекте

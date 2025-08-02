@@ -3,17 +3,18 @@
 // Initialize tRPC
 const t = initTRPC.create();
 
-// Export publicProcedure and router.ts for use in procedures.ts
 export const publicProcedure = t.procedure;
 export const router = t.router;
 
-// Import procedures after defining exports to avoid circular dependency
-import { botProcedures, userProcedures } from './procedures';
+import { botProcedures, userProcedures, rouletteProcedures } from './procedures';
 
-// Create and export appRouter
-export const appRouter = router({
-    ...botProcedures,
-    ...userProcedures,
+const internalRouter = t.router({
+    internal: t.router({
+        bot: botProcedures,
+    }), // Apply middleware to all /internal/bot/... routes
 });
+
+// Merge all routers into appRouter
+export const appRouter = t.mergeRouters(internalRouter, userProcedures, rouletteProcedures);
 
 export type AppRouter = typeof appRouter;

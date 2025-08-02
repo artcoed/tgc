@@ -355,3 +355,52 @@ input:focus {
   background: linear-gradient(137deg, #EF4444 16.24%, #DC2626 75.72%);
   filter: drop-shadow(0 8px 24px rgba(220, 38, 38, 0.40));
 }
+
+.modalWinWindow {
+  border: 1px solid rgba(16, 185, 129, 0.40);
+  background: rgba(5, 150, 105, 0.12);
+}
+
+.modalWinWindow .modalResultValue {
+  color: #10B981;
+}
+
+.modalWinWindow .modalResultTitle {
+  color: #10B981;
+}
+
+.modalWinWindow .iconContainer {
+  background: linear-gradient(137deg, #10B981 16.24%, #059669 75.72%);
+  filter: drop-shadow(0 8px 24px rgba(16, 185, 129, 0.40));
+}
+
+.balanceInfo {
+  margin-top: 12px;
+  color: #2990FF;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 22px;
+  letter-spacing: 0.15px;
+  text-align: center;
+}
+
+.modalResultBalance {
+  color: rgba(255, 255, 255, 0.70);
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 22px;
+  letter-spacing: -0.4px;
+  margin-top: 8px;
+}
+
+.modalResultAttempts {
+  color: rgba(255, 255, 255, 0.70);
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 22px;
+  letter-spacing: -0.4px;
+  margin-top: 8px;
+}

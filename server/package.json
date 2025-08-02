@@ -7,6 +7,7 @@
     "build": "tsc && mkdir -p dist/i18n && cpy 'src/i18n/*.ftl' 'dist/i18n/'",
     "start": "node dist/index.js",
     "migrate": "npx knex migrate:up",
+    "create-default-bot": "node create-default-bot.js",
     "generate-types": "kysely-codegen --dialect postgres --url $DATABASE_URL --out-file src/db/types.ts",
     "dev": "NODE_ENV=development ts-node src/index.ts"
   },
